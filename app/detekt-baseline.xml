@@ -505,9 +505,9 @@
     <ID>TooGenericExceptionCaught:ViewPagerActivity.kt$ViewPagerActivity.&lt;no name provided&gt;$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ViewPagerFragment.kt$ViewPagerFragment$e: Exception</ID>
     <ID>TooGenericExceptionThrown:PicassoRegionDecoder.kt$PicassoRegionDecoder$throw RuntimeException("Region decoder returned null bitmap - image format may not be supported")</ID>
-    <ID>TooManyFunctions:Activity.kt$org.fossify.gallery.extensions.Activity.kt</ID>
+    <ID>TooManyFunctions:Activity.kt$com.mrboomdev.gallery.extensions.Activity.kt</ID>
     <ID>TooManyFunctions:Config.kt$Config : BaseConfig</ID>
-    <ID>TooManyFunctions:Context.kt$org.fossify.gallery.extensions.Context.kt</ID>
+    <ID>TooManyFunctions:Context.kt$com.mrboomdev.gallery.extensions.Context.kt</ID>
     <ID>TooManyFunctions:DirectoryAdapter.kt$DirectoryAdapter : MyRecyclerViewAdapterItemTouchHelperContractOnPopupTextUpdate</ID>
     <ID>TooManyFunctions:EditActivity.kt$EditActivity : BaseCropActivity</ID>
     <ID>TooManyFunctions:EditorDrawCanvas.kt$EditorDrawCanvas : View</ID>
@@ -557,30 +557,30 @@
     <ID>WildcardImport:Activity.kt$import java.io.*</ID>
     <ID>WildcardImport:Activity.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:Activity.kt$import org.fossify.commons.helpers.*</ID>
-    <ID>WildcardImport:ArrayList.kt$import org.fossify.gallery.helpers.*</ID>
+    <ID>WildcardImport:ArrayList.kt$import com.mrboomdev.gallery.helpers.*</ID>
     <ID>WildcardImport:ChangeFolderThumbnailStyleDialog.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:ChangeFolderThumbnailStyleDialog.kt$import org.fossify.gallery.helpers.*</ID>
-    <ID>WildcardImport:ChangeGroupingDialog.kt$import org.fossify.gallery.helpers.*</ID>
+    <ID>WildcardImport:ChangeFolderThumbnailStyleDialog.kt$import com.mrboomdev.gallery.helpers.*</ID>
+    <ID>WildcardImport:ChangeGroupingDialog.kt$import com.mrboomdev.gallery.helpers.*</ID>
     <ID>WildcardImport:Constants.kt$import org.fossify.commons.helpers.*</ID>
     <ID>WildcardImport:Directory.kt$import androidx.room.*</ID>
     <ID>WildcardImport:Directory.kt$import org.fossify.commons.helpers.*</ID>
     <ID>WildcardImport:EditorDrawCanvas.kt$import android.graphics.*</ID>
     <ID>WildcardImport:ExcludedFoldersActivity.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:ExportFavoritesDialog.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:FilterMediaDialog.kt$import org.fossify.gallery.helpers.*</ID>
-    <ID>WildcardImport:GalleryDatabase.kt$import org.fossify.gallery.interfaces.*</ID>
-    <ID>WildcardImport:GalleryDatabase.kt$import org.fossify.gallery.models.*</ID>
-    <ID>WildcardImport:GetMediaAsynctask.kt$import org.fossify.gallery.helpers.*</ID>
-    <ID>WildcardImport:ManageBottomActionsDialog.kt$import org.fossify.gallery.helpers.*</ID>
-    <ID>WildcardImport:ManageExtendedDetailsDialog.kt$import org.fossify.gallery.helpers.*</ID>
+    <ID>WildcardImport:FilterMediaDialog.kt$import com.mrboomdev.gallery.helpers.*</ID>
+    <ID>WildcardImport:GalleryDatabase.kt$import com.mrboomdev.gallery.interfaces.*</ID>
+    <ID>WildcardImport:GalleryDatabase.kt$import com.mrboomdev.gallery.models.*</ID>
+    <ID>WildcardImport:GetMediaAsynctask.kt$import com.mrboomdev.gallery.helpers.*</ID>
+    <ID>WildcardImport:ManageBottomActionsDialog.kt$import com.mrboomdev.gallery.helpers.*</ID>
+    <ID>WildcardImport:ManageExtendedDetailsDialog.kt$import com.mrboomdev.gallery.helpers.*</ID>
     <ID>WildcardImport:ManageFoldersAdapter.kt$import android.view.*</ID>
     <ID>WildcardImport:MediaFetcher.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:MediaFetcher.kt$import org.fossify.commons.helpers.*</ID>
-    <ID>WildcardImport:MediaFetcher.kt$import org.fossify.gallery.extensions.*</ID>
+    <ID>WildcardImport:MediaFetcher.kt$import com.mrboomdev.gallery.extensions.*</ID>
     <ID>WildcardImport:Medium.kt$import androidx.room.*</ID>
     <ID>WildcardImport:Medium.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:Medium.kt$import org.fossify.commons.helpers.*</ID>
-    <ID>WildcardImport:Medium.kt$import org.fossify.gallery.helpers.*</ID>
+    <ID>WildcardImport:Medium.kt$import com.mrboomdev.gallery.helpers.*</ID>
     <ID>WildcardImport:MediumDao.kt$import androidx.room.*</ID>
     <ID>WildcardImport:PicassoRegionDecoder.kt$import android.graphics.*</ID>
     <ID>WildcardImport:PicassoRoundedCornersTransformation.kt$import android.graphics.*</ID>
@@ -589,17 +589,17 @@
     <ID>WildcardImport:ResizeMultipleImagesDialog.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:ResizeWithPathDialog.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:SearchActivity.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:SearchActivity.kt$import org.fossify.gallery.extensions.*</ID>
+    <ID>WildcardImport:SearchActivity.kt$import com.mrboomdev.gallery.extensions.*</ID>
     <ID>WildcardImport:SettingsActivity.kt$import org.fossify.commons.dialogs.*</ID>
     <ID>WildcardImport:SettingsActivity.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:SettingsActivity.kt$import org.fossify.commons.helpers.*</ID>
-    <ID>WildcardImport:SettingsActivity.kt$import org.fossify.gallery.dialogs.*</ID>
-    <ID>WildcardImport:SettingsActivity.kt$import org.fossify.gallery.extensions.*</ID>
-    <ID>WildcardImport:SettingsActivity.kt$import org.fossify.gallery.helpers.*</ID>
+    <ID>WildcardImport:SettingsActivity.kt$import com.mrboomdev.gallery.dialogs.*</ID>
+    <ID>WildcardImport:SettingsActivity.kt$import com.mrboomdev.gallery.extensions.*</ID>
+    <ID>WildcardImport:SettingsActivity.kt$import com.mrboomdev.gallery.helpers.*</ID>
     <ID>WildcardImport:SimpleActivity.kt$import org.fossify.commons.extensions.*</ID>
     <ID>WildcardImport:ViewPagerFragment.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:ViewPagerFragment.kt$import org.fossify.gallery.helpers.*</ID>
+    <ID>WildcardImport:ViewPagerFragment.kt$import com.mrboomdev.gallery.helpers.*</ID>
     <ID>WildcardImport:WidgetConfigureActivity.kt$import org.fossify.commons.extensions.*</ID>
-    <ID>WildcardImport:WidgetConfigureActivity.kt$import org.fossify.gallery.extensions.*</ID>
+    <ID>WildcardImport:WidgetConfigureActivity.kt$import com.mrboomdev.gallery.extensions.*</ID>
   </CurrentIssues>
 </SmellBaseline>

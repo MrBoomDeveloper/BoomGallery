@@ -4,6 +4,6 @@
     <string name="gif">GIF</string>
     <string name="raw">RAW</string>
     <string name="svg">SVG</string>
-    <string name="package_name">org.fossify.gallery</string>
+    <string name="package_name">com.mrboomdev.gallery</string>
     <string name="playback_speed_display_text">2x >></string>
 </resources>

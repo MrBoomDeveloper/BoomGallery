@@ -3548,7 +3548,7 @@
 
     <issue
         id="UnsafeIntentLaunch"
-        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component org.fossify.gallery.activities.EditActivity. You could either make the component org.fossify.gallery.activities.EditActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
+        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component com.mrboomdev.gallery.activities.EditActivity. You could either make the component com.mrboomdev.gallery.activities.EditActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
         errorLine1="        setResult(RESULT_OK, intent)"
         errorLine2="                             ~~~~~~">
         <location
@@ -3564,7 +3564,7 @@
 
     <issue
         id="UnsafeIntentLaunch"
-        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component org.fossify.gallery.activities.EditActivity. You could either make the component org.fossify.gallery.activities.EditActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
+        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component com.mrboomdev.gallery.activities.EditActivity. You could either make the component com.mrboomdev.gallery.activities.EditActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
         errorLine1="                        setResult(RESULT_OK, intent)"
         errorLine2="                                             ~~~~~~">
         <location
@@ -3580,7 +3580,7 @@
 
     <issue
         id="UnsafeIntentLaunch"
-        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component org.fossify.gallery.activities.EditActivity. You could either make the component org.fossify.gallery.activities.EditActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
+        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component com.mrboomdev.gallery.activities.EditActivity. You could either make the component com.mrboomdev.gallery.activities.EditActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
         errorLine1="            setResult(RESULT_OK, intent)"
         errorLine2="                                 ~~~~~~">
         <location
@@ -3945,7 +3945,7 @@
     <issue
         id="UnusedResources"
         message="The resource `R.string.package_name` appears to be unused"
-        errorLine1="    &lt;string name=&quot;package_name&quot;>org.fossify.gallery&lt;/string>"
+        errorLine1="    &lt;string name=&quot;package_name&quot;>com.mrboomdev.gallery&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/donottranslate.xml"

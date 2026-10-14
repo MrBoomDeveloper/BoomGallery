@@ -33,8 +33,8 @@
         tools:node="remove" />
 
     <queries>
-        <package android:name="org.fossify.gallery.debug" />
-        <package android:name="org.fossify.gallery" />
+        <package android:name="com.mrboomdev.gallery.debug" />
+        <package android:name="com.mrboomdev.gallery" />
     </queries>
 
     <uses-feature
@@ -42,7 +42,7 @@
         android:required="false" />
 
     <application
-        android:name="org.fossify.gallery.App"
+        android:name="com.mrboomdev.gallery.App"
         android:allowBackup="true"
         android:appCategory="image"
         android:icon="@mipmap/ic_launcher"
@@ -231,7 +231,7 @@
         </activity>
 
         <activity
-            android:name="org.fossify.gallery.activities.EditActivity"
+            android:name="com.mrboomdev.gallery.activities.EditActivity"
             android:configChanges="orientation"
             android:exported="true"
             android:label="@string/basic_editor">

@@ -1,3 +1,4 @@
+import org.gradle.internal.impldep.org.apache.commons.compress.harmony.pack200.PackingUtils.config
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.konan.properties.Properties
@@ -80,12 +81,6 @@ android {
         }
     }
 
-    flavorDimensions.add("licensing")
-    productFlavors {
-        register("foss")
-        register("gplay")
-    }
-
     sourceSets {
         getByName("main").java.directories.add("src/main/kotlin")
     }
@@ -143,7 +138,7 @@ detekt {
 }
 
 dependencies {
-    implementation(libs.fossify.commons)
+    implementation(project(":commons"))
     implementation(libs.androidx.print)
     implementation(libs.android.image.cropper)
     implementation(libs.exif)

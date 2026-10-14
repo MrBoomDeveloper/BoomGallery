@@ -62,7 +62,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0" />
 
-        <org.fossify.gallery.views.EditorDrawCanvas
+        <com.mrboomdev.gallery.views.EditorDrawCanvas
             android:id="@+id/editor_draw_canvas"
             android:layout_width="0dp"
             android:layout_height="0dp"

@@ -91,7 +91,7 @@
     <ID>InstanceOfCheckForException:Activity.kt$e !is IOException</ID>
     <ID>LargeClass:DirectoryAdapter.kt$DirectoryAdapter : MyRecyclerViewAdapterItemTouchHelperContractOnPopupTextUpdate</ID>
     <ID>LargeClass:EditActivity.kt$EditActivity : BaseCropActivity</ID>
-    <ID>LargeClass:MainActivity.kt$MainActivity : SimpleActivityDirectoryOperationsListener</ID>
+    <ID>LargeClass:MainActivity.kt$MainActivity : SimpleActivityDirectoryOperationsListenerMediaOperationsListener</ID>
     <ID>LargeClass:MediaActivity.kt$MediaActivity : SimpleActivityMediaOperationsListener</ID>
     <ID>LargeClass:MediaAdapter.kt$MediaAdapter : MyRecyclerViewAdapterOnPopupTextUpdate</ID>
     <ID>LargeClass:MediaFetcher.kt$MediaFetcher</ID>
@@ -511,7 +511,7 @@
     <ID>TooManyFunctions:DirectoryAdapter.kt$DirectoryAdapter : MyRecyclerViewAdapterItemTouchHelperContractOnPopupTextUpdate</ID>
     <ID>TooManyFunctions:EditActivity.kt$EditActivity : BaseCropActivity</ID>
     <ID>TooManyFunctions:EditorDrawCanvas.kt$EditorDrawCanvas : View</ID>
-    <ID>TooManyFunctions:MainActivity.kt$MainActivity : SimpleActivityDirectoryOperationsListener</ID>
+    <ID>TooManyFunctions:MainActivity.kt$MainActivity : SimpleActivityDirectoryOperationsListenerMediaOperationsListener</ID>
     <ID>TooManyFunctions:ManageFoldersAdapter.kt$ManageFoldersAdapter : MyRecyclerViewAdapter</ID>
     <ID>TooManyFunctions:ManageHiddenFoldersAdapter.kt$ManageHiddenFoldersAdapter : MyRecyclerViewAdapter</ID>
     <ID>TooManyFunctions:MediaActivity.kt$MediaActivity : SimpleActivityMediaOperationsListener</ID>

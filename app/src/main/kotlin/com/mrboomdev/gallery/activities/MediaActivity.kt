@@ -294,7 +294,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (config.showAll && !isChangingConfigurations) {
+        if (mShowAll && !isChangingConfigurations) {
             config.temporarilyShowHidden = false
             config.tempSkipDeleteConfirmation = false
             config.tempSkipRecycleBin = false
@@ -310,7 +310,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
             binding.mediaMenu.closeSearch()
             true
         } else {
-            if (config.showAll) {
+            if (mShowAll) {
                 appLockManager.lock()
             }
 
@@ -427,7 +427,9 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
             mStoredMarkFavoriteItems = markFavoriteItems
             mStoredThumbnailSpacing = thumbnailSpacing
             mStoredRoundedCorners = fileRoundedCorners
-            mShowAll = showAll && mPath != RECYCLE_BIN
+
+            // the all-content view is only used when no particular folder/path is opened
+            mShowAll = showAll && mPath.isEmpty()
         }
     }
 

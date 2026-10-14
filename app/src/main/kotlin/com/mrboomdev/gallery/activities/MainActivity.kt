@@ -11,6 +11,7 @@ import android.provider.MediaStore.Video
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.fossify.commons.dialogs.CreateNewFolderDialog
 import org.fossify.commons.dialogs.FilePickerDialog
@@ -27,6 +28,7 @@ import org.fossify.commons.extensions.getDoesFilePathExist
 import org.fossify.commons.extensions.getFileCount
 import org.fossify.commons.extensions.getFilePublicUri
 import org.fossify.commons.extensions.getFilenameFromPath
+import org.fossify.commons.extensions.getIsPathDirectory
 import org.fossify.commons.extensions.getLatestMediaByDateId
 import org.fossify.commons.extensions.getLatestMediaId
 import org.fossify.commons.extensions.getMimeType
@@ -51,6 +53,7 @@ import org.fossify.commons.extensions.isPathOnOTG
 import org.fossify.commons.extensions.isRawFast
 import org.fossify.commons.extensions.isSvg
 import org.fossify.commons.extensions.isVideoFast
+import org.fossify.commons.extensions.isVisible
 import org.fossify.commons.extensions.launchMoreAppsFromUsIntent
 import org.fossify.commons.extensions.recycleBinPath
 import org.fossify.commons.extensions.sdCardPath
@@ -61,9 +64,11 @@ import org.fossify.commons.extensions.underlineText
 import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.DAY_SECONDS
 import org.fossify.commons.helpers.FAVORITES
+import org.fossify.commons.helpers.IS_FROM_GALLERY
 import org.fossify.commons.helpers.PERMISSION_READ_STORAGE
 import org.fossify.commons.helpers.SORT_BY_DATE_MODIFIED
 import org.fossify.commons.helpers.SORT_BY_DATE_TAKEN
+import org.fossify.commons.helpers.SORT_BY_RANDOM
 import org.fossify.commons.helpers.SORT_BY_SIZE
 import org.fossify.commons.helpers.SORT_USE_NUMERIC_VALUE
 import org.fossify.commons.helpers.VIEW_TYPE_GRID
@@ -78,8 +83,11 @@ import org.fossify.commons.views.MyRecyclerView
 import com.mrboomdev.gallery.BuildConfig
 import com.mrboomdev.gallery.R
 import com.mrboomdev.gallery.adapters.DirectoryAdapter
+import com.mrboomdev.gallery.adapters.MediaAdapter
+import com.mrboomdev.gallery.asynctasks.GetMediaAsynctask
 import com.mrboomdev.gallery.databases.GalleryDatabase
 import com.mrboomdev.gallery.databinding.ActivityMainBinding
+import com.mrboomdev.gallery.dialogs.ChangeGroupingDialog
 import com.mrboomdev.gallery.dialogs.ChangeSortingDialog
 import com.mrboomdev.gallery.dialogs.ChangeViewTypeDialog
 import com.mrboomdev.gallery.dialogs.FilterMediaDialog
@@ -87,6 +95,7 @@ import com.mrboomdev.gallery.dialogs.GrantAllFilesDialog
 import com.mrboomdev.gallery.extensions.addTempFolderIfNeeded
 import com.mrboomdev.gallery.extensions.config
 import com.mrboomdev.gallery.extensions.createDirectoryFromMedia
+import com.mrboomdev.gallery.extensions.deleteDBPath
 import com.mrboomdev.gallery.extensions.directoryDB
 import com.mrboomdev.gallery.extensions.getCachedDirectories
 import com.mrboomdev.gallery.extensions.getCachedMedia
@@ -102,10 +111,12 @@ import com.mrboomdev.gallery.extensions.handleMediaManagementPrompt
 import com.mrboomdev.gallery.extensions.isDownloadsFolder
 import com.mrboomdev.gallery.extensions.launchAbout
 import com.mrboomdev.gallery.extensions.launchCamera
+import com.mrboomdev.gallery.extensions.launchGesturePlayer
 import com.mrboomdev.gallery.extensions.launchSettings
 import com.mrboomdev.gallery.extensions.mediaDB
 import com.mrboomdev.gallery.extensions.movePathsInRecycleBin
 import com.mrboomdev.gallery.extensions.movePinnedDirectoriesToFront
+import com.mrboomdev.gallery.extensions.openPath
 import com.mrboomdev.gallery.extensions.openRecycleBin
 import com.mrboomdev.gallery.extensions.removeInvalidDBDirectories
 import com.mrboomdev.gallery.extensions.storeDirectoryItems
@@ -121,35 +132,43 @@ import com.mrboomdev.gallery.helpers.GROUP_BY_DATE_TAKEN_MONTHLY
 import com.mrboomdev.gallery.helpers.GROUP_BY_LAST_MODIFIED_DAILY
 import com.mrboomdev.gallery.helpers.GROUP_BY_LAST_MODIFIED_MONTHLY
 import com.mrboomdev.gallery.helpers.GROUP_DESCENDING
+import com.mrboomdev.gallery.helpers.GridSpacingItemDecoration
 import com.mrboomdev.gallery.helpers.LOCATION_INTERNAL
 import com.mrboomdev.gallery.helpers.MAX_COLUMN_COUNT
 import com.mrboomdev.gallery.helpers.MONTH_MILLISECONDS
 import com.mrboomdev.gallery.helpers.MediaFetcher
+import com.mrboomdev.gallery.helpers.PATH
 import com.mrboomdev.gallery.helpers.PICKED_PATHS
 import com.mrboomdev.gallery.helpers.RECYCLE_BIN
 import com.mrboomdev.gallery.helpers.SET_WALLPAPER_INTENT
 import com.mrboomdev.gallery.helpers.SHOW_ALL
 import com.mrboomdev.gallery.helpers.SHOW_TEMP_HIDDEN_DURATION
+import com.mrboomdev.gallery.helpers.SLIDESHOW_START_ON_ENTER
 import com.mrboomdev.gallery.helpers.SKIP_AUTHENTICATION
 import com.mrboomdev.gallery.helpers.TYPE_GIFS
 import com.mrboomdev.gallery.helpers.TYPE_IMAGES
 import com.mrboomdev.gallery.helpers.TYPE_RAWS
 import com.mrboomdev.gallery.helpers.TYPE_SVGS
 import com.mrboomdev.gallery.helpers.TYPE_VIDEOS
+import com.mrboomdev.gallery.helpers.VIDEO_PLAYER_APP
+import com.mrboomdev.gallery.helpers.VIDEO_PLAYER_SYSTEM
 import com.mrboomdev.gallery.helpers.getDefaultFileFilter
 import com.mrboomdev.gallery.helpers.getPermissionToRequest
 import com.mrboomdev.gallery.helpers.getPermissionsToRequest
 import com.mrboomdev.gallery.interfaces.DirectoryOperationsListener
+import com.mrboomdev.gallery.interfaces.MediaOperationsListener
 import com.mrboomdev.gallery.jobs.NewPhotoFetcher
 import com.mrboomdev.gallery.models.Directory
 import com.mrboomdev.gallery.models.Medium
+import com.mrboomdev.gallery.models.ThumbnailItem
+import com.mrboomdev.gallery.models.ThumbnailSection
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.InputStream
 import java.io.OutputStream
 
-class MainActivity : SimpleActivity(), DirectoryOperationsListener {
+class MainActivity : SimpleActivity(), DirectoryOperationsListener, MediaOperationsListener {
     override var isSearchBarEnabled = true
     
     companion object {
@@ -195,6 +214,31 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     private var mStoredTextColor = 0
     private var mStoredPrimaryColor = 0
     private var mStoredStyleString = ""
+
+    // Photos tab
+    private var mShowingPhotos = false
+    private var mPhotos = ArrayList<ThumbnailItem>()
+    private var mIsGettingPhotos = false
+    private var mPhotosLoadedInitial = false
+    private var mPhotosLastSearchedText = ""
+    private var mPhotosWereVisibleInFullscreen = false
+    private var mShowPhotosLoadingIndicator = true
+    private var mPhotosLatestMediaId = 0L
+    private var mPhotosLatestMediaDateId = 0L
+    private var mCurrPhotosAsyncTask: GetMediaAsynctask? = null
+    private var mPhotosZoomListener: MyRecyclerView.MyZoomListener? = null
+    private var mPhotosLastMediaHandler = Handler()
+
+    private var mStoredPhotosAnimateGifs = true
+    private var mStoredPhotosCropThumbnails = true
+    private var mStoredPhotosScrollHorizontally = true
+    private var mStoredPhotosShowFileTypes = true
+    private var mStoredPhotosRoundedCorners = false
+    private var mStoredPhotosMarkFavoriteItems = true
+    private var mStoredPhotosTextColor = 0
+    private var mStoredPhotosPrimaryColor = 0
+    private var mStoredPhotosThumbnailSpacing = 0
+
     private val binding by viewBinding(ActivityMainBinding::inflate)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -226,14 +270,27 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                 || mIsGetAnyContentIntent
                 || mIsSetWallpaperIntent
 
-        setupOptionsMenu()
-        refreshMenuItems()
+        // third party intents always start at the folders view, the all-content view is opened from there
+        mShowingPhotos = !mIsThirdPartyIntent && config.showAll
 
-        setupEdgeToEdge(
-            padBottomImeAndSystem = listOf(binding.directoriesGrid)
-        )
+        setupOptionsMenu()
+        setupPhotosOptionsMenu()
+        setupBottomNavigation()
+        refreshMenuItems()
+        refreshPhotosMenuItems()
+
+        // the bottom navigation takes care of the bottom system insets and the window is resized by the keyboard
+        setupEdgeToEdge()
 
         binding.directoriesRefreshLayout.setOnRefreshListener { getDirectories() }
+        binding.photosRefreshLayout.setOnRefreshListener { getPhotos() }
+        binding.photosEmptyTextPlaceholder2.setOnClickListener {
+            showPhotosFilterMediaDialog()
+        }
+
+        binding.photosCoordinator.beVisibleIf(mShowingPhotos)
+        binding.directoriesCoordinator.beVisibleIf(!mShowingPhotos)
+
         storeStateVariables()
         checkWhatsNewDialog()
         setupLatestMediaId()
@@ -295,6 +352,11 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         mTimeFormat = getTimeFormat()
 
         refreshMenuItems()
+        refreshPhotosMenuItems()
+
+        if (mShowingPhotos) {
+            updatePhotosTab()
+        }
 
         if (mStoredAnimateGifs != config.animateGifs) {
             getRecyclerAdapter()?.updateAnimateGifs(config.animateGifs)
@@ -338,8 +400,9 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
         binding.directoriesSwitchSearching.underlineText()
         binding.directoriesEmptyPlaceholder2.bringToFront()
 
-        if (!binding.mainMenu.isSearchOpen) {
-            refreshMenuItems()
+        val activeMenu = if (mShowingPhotos) binding.photosMenu else binding.mainMenu
+        if (!activeMenu.isSearchOpen) {
+            refreshActiveMenu()
             tryLoadGallery()
         }
 
@@ -353,9 +416,16 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     override fun onPause() {
         super.onPause()
         binding.directoriesRefreshLayout.isRefreshing = false
+        binding.photosRefreshLayout.isRefreshing = false
         mIsGettingDirs = false
+        mIsGettingPhotos = false
         storeStateVariables()
         mLastMediaHandler.removeCallbacksAndMessages(null)
+        mPhotosLastMediaHandler.removeCallbacksAndMessages(null)
+
+        if (mPhotos.isNotEmpty()) {
+            mCurrPhotosAsyncTask?.stopFetching()
+        }
     }
 
     override fun onStop() {
@@ -381,6 +451,8 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
             config.tempSkipDeleteConfirmation = false
             config.tempSkipRecycleBin = false
             mTempShowHiddenHandler.removeCallbacksAndMessages(null)
+            mPhotosLastMediaHandler.removeCallbacksAndMessages(null)
+            mCurrPhotosAsyncTask?.stopFetching()
             removeTempFolder()
             unregisterFileUpdateListener()
 
@@ -392,6 +464,16 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     }
 
     override fun onBackPressedCompat(): Boolean {
+        if (mShowingPhotos) {
+            if (binding.photosMenu.isSearchOpen) {
+                binding.photosMenu.closeSearch()
+                return true
+            }
+
+            showTab(showPhotos = false)
+            return true
+        }
+
         return if (binding.mainMenu.isSearchOpen) {
             binding.mainMenu.closeSearch()
             true
@@ -497,7 +579,6 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
                 R.id.sort -> showSortingDialog()
                 R.id.filter -> showFilterMediaDialog()
                 R.id.open_camera -> launchCamera()
-                R.id.show_all -> showAllMedia()
                 R.id.change_view_type -> changeViewType()
                 R.id.temporarily_show_hidden -> tryToggleTemporarilyShowHidden()
                 R.id.stop_showing_hidden -> tryToggleTemporarilyShowHidden()
@@ -518,6 +599,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
 
     private fun updateMenuColors() {
         binding.mainMenu.updateColors()
+        binding.photosMenu.updateColors()
     }
 
     private fun getRecyclerAdapter() = binding.directoriesGrid.adapter as? DirectoryAdapter
@@ -525,12 +607,629 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     private fun storeStateVariables() {
         mStoredTextColor = getProperTextColor()
         mStoredPrimaryColor = getProperPrimaryColor()
+        mStoredPhotosTextColor = mStoredTextColor
+        mStoredPhotosPrimaryColor = mStoredPrimaryColor
         config.apply {
             mStoredAnimateGifs = animateGifs
             mStoredCropThumbnails = cropThumbnails
             mStoredScrollHorizontally = scrollHorizontally
             mStoredStyleString = "$folderStyle$showFolderMediaCount$limitFolderTitle"
+
+            mStoredPhotosAnimateGifs = animateGifs
+            mStoredPhotosCropThumbnails = cropThumbnails
+            mStoredPhotosScrollHorizontally = scrollHorizontally
+            mStoredPhotosShowFileTypes = showThumbnailFileTypes
+            mStoredPhotosMarkFavoriteItems = markFavoriteItems
+            mStoredPhotosThumbnailSpacing = thumbnailSpacing
+            mStoredPhotosRoundedCorners = fileRoundedCorners
         }
+    }
+
+    private fun refreshActiveMenu() {
+        if (mShowingPhotos) {
+            refreshPhotosMenuItems()
+        } else {
+            refreshMenuItems()
+        }
+    }
+
+    private fun setupBottomNavigation() {
+        binding.bottomNavigation.selectedItemId =
+            if (mShowingPhotos) R.id.nav_photos else R.id.nav_albums
+
+        binding.bottomNavigation.setOnItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_photos -> {
+                    showTab(showPhotos = true)
+                    true
+                }
+
+                R.id.nav_albums -> {
+                    showTab(showPhotos = false)
+                    true
+                }
+
+                else -> false
+            }
+        }
+    }
+
+    private fun showTab(showPhotos: Boolean) {
+        if (mIsThirdPartyIntent) {
+            // while picking files from a third party app, the all-content view is a separate activity
+            if (showPhotos) {
+                binding.bottomNavigation.selectedItemId = R.id.nav_albums
+                showAllMedia()
+            }
+
+            return
+        }
+
+        if (mShowingPhotos == showPhotos) {
+            return
+        }
+
+        mShowingPhotos = showPhotos
+        config.showAll = showPhotos
+        hideKeyboard()
+
+        binding.bottomNavigation.selectedItemId =
+            if (showPhotos) R.id.nav_photos else R.id.nav_albums
+        binding.photosCoordinator.beVisibleIf(showPhotos)
+        binding.directoriesCoordinator.beVisibleIf(!showPhotos)
+
+        if (showPhotos) {
+            refreshPhotosMenuItems()
+            getPhotos()
+        } else {
+            refreshMenuItems()
+            getDirectories()
+        }
+    }
+
+    private fun updatePhotosTab() {
+        val photosAdapter = getPhotosAdapter()
+
+        if (mStoredPhotosAnimateGifs != config.animateGifs) {
+            photosAdapter?.updateAnimateGifs(config.animateGifs)
+        }
+
+        if (mStoredPhotosCropThumbnails != config.cropThumbnails) {
+            photosAdapter?.updateCropThumbnails(config.cropThumbnails)
+        }
+
+        if (mStoredPhotosScrollHorizontally != config.scrollHorizontally) {
+            mPhotosLoadedInitial = false
+            binding.photosGrid.adapter = null
+        }
+
+        if (mStoredPhotosShowFileTypes != config.showThumbnailFileTypes) {
+            photosAdapter?.updateShowFileTypes(config.showThumbnailFileTypes)
+        }
+
+        if (mStoredPhotosTextColor != getProperTextColor()) {
+            photosAdapter?.updateTextColor(getProperTextColor())
+        }
+
+        if (mStoredPhotosPrimaryColor != getProperPrimaryColor()) {
+            photosAdapter?.updatePrimaryColor()
+        }
+
+        if (
+            mStoredPhotosThumbnailSpacing != config.thumbnailSpacing
+            || mStoredPhotosRoundedCorners != config.fileRoundedCorners
+            || mStoredPhotosMarkFavoriteItems != config.markFavoriteItems
+        ) {
+            binding.photosGrid.adapter = null
+            setupPhotosAdapter()
+        }
+
+        refreshPhotosMenuItems()
+        binding.photosFastscroller.updateColors(getProperPrimaryColor())
+        binding.photosRefreshLayout.isEnabled = config.enablePullToRefresh
+        photosAdapter?.apply {
+            dateFormat = config.dateFormat
+            timeFormat = getTimeFormat()
+        }
+
+        binding.photosLoadingIndicator.setIndicatorColor(getProperPrimaryColor())
+        binding.photosEmptyTextPlaceholder.setTextColor(getProperTextColor())
+        binding.photosEmptyTextPlaceholder2.setTextColor(getProperPrimaryColor())
+        binding.photosEmptyTextPlaceholder2.bringToFront()
+    }
+
+    private fun setupPhotosOptionsMenu() {
+        binding.photosMenu.requireToolbar().inflateMenu(R.menu.menu_media)
+        binding.photosMenu.toggleHideOnScroll(!config.scrollHorizontally)
+        binding.photosMenu.setupMenu()
+        binding.photosMenu.updateHintText(getString(org.fossify.commons.R.string.search_files))
+
+        binding.photosMenu.onSearchTextChangedListener = { text ->
+            mPhotosLastSearchedText = text
+            searchPhotos(text)
+            binding.photosRefreshLayout.isEnabled =
+                text.isEmpty() && config.enablePullToRefresh
+        }
+
+        binding.photosMenu.requireToolbar().setOnMenuItemClickListener { menuItem ->
+            handlePhotosMenuItem(menuItem.itemId)
+        }
+    }
+
+    private fun handlePhotosMenuItem(itemId: Int): Boolean {
+        when (itemId) {
+            R.id.temporarily_show_hidden,
+            R.id.stop_showing_hidden -> tryToggleTemporarilyShowHidden()
+
+            R.id.sort, R.id.filter, R.id.group, R.id.change_view_type -> showPhotosDialog(itemId)
+            R.id.toggle_filename -> togglePhotosFilenameVisibility()
+            R.id.open_camera -> launchCamera()
+            R.id.open_recycle_bin -> openRecycleBin()
+            R.id.column_count -> changePhotosColumnCount()
+            R.id.slideshow -> startPhotosSlideshow()
+            R.id.set_as_default_folder -> unsetDefaultFolder()
+            R.id.settings -> launchSettings()
+            R.id.about -> launchAbout()
+            else -> return false
+        }
+
+        return true
+    }
+
+    private fun showPhotosDialog(itemId: Int) {
+        when (itemId) {
+            R.id.sort -> showPhotosSortingDialog()
+            R.id.filter -> showPhotosFilterMediaDialog()
+            R.id.group -> showPhotosGroupByDialog()
+            R.id.change_view_type -> changePhotosViewType()
+        }
+    }
+
+    private fun refreshPhotosMenuItems() {
+        binding.photosMenu.requireToolbar().menu.apply {
+            // the folders view is reachable through the bottom navigation now
+            findItem(R.id.folder_view).isVisible = false
+            findItem(R.id.group).isVisible = !config.scrollHorizontally
+            findItem(R.id.open_camera).isVisible = true
+            findItem(R.id.about).isVisible = true
+            findItem(R.id.create_new_folder).isVisible = false
+            findItem(R.id.empty_recycle_bin).isVisible = false
+            findItem(R.id.empty_disable_recycle_bin).isVisible = false
+            findItem(R.id.restore_all_files).isVisible = false
+            findItem(R.id.unset_as_default_folder).isVisible = false
+            findItem(R.id.set_as_default_folder).isVisible = config.defaultFolder.isNotEmpty()
+            findItem(R.id.open_recycle_bin).isVisible = config.useRecycleBin
+
+            findItem(R.id.temporarily_show_hidden).isVisible = !config.shouldShowHidden
+            findItem(R.id.stop_showing_hidden).isVisible =
+                (!isRPlus() || isExternalStorageManager()) && config.temporarilyShowHidden
+
+            val viewType = config.getFolderViewType(SHOW_ALL)
+            findItem(R.id.column_count).isVisible = viewType == VIEW_TYPE_GRID
+            findItem(R.id.toggle_filename).isVisible = viewType == VIEW_TYPE_GRID
+        }
+    }
+
+    private fun unsetDefaultFolder() {
+        config.defaultFolder = ""
+        refreshPhotosMenuItems()
+        refreshMenuItems()
+    }
+
+    private fun changePhotosViewType() {
+        ChangeViewTypeDialog(this, false, SHOW_ALL) {
+            refreshPhotosMenuItems()
+            setupPhotosLayoutManager()
+            binding.photosGrid.adapter = null
+            setupPhotosAdapter()
+        }
+    }
+
+    private fun showPhotosSortingDialog() {
+        ChangeSortingDialog(this, false, true, SHOW_ALL) {
+            mPhotosLoadedInitial = false
+            binding.photosGrid.adapter = null
+            getPhotos()
+        }
+    }
+
+    private fun showPhotosGroupByDialog() {
+        ChangeGroupingDialog(this, SHOW_ALL) {
+            mPhotosLoadedInitial = false
+            binding.photosGrid.adapter = null
+            getPhotos()
+        }
+    }
+
+    private fun showPhotosFilterMediaDialog() {
+        FilterMediaDialog(this) {
+            mPhotosLoadedInitial = false
+            binding.photosRefreshLayout.isRefreshing = true
+            binding.photosGrid.adapter = null
+            getPhotos()
+        }
+    }
+
+    private fun togglePhotosFilenameVisibility() {
+        config.displayFileNames = !config.displayFileNames
+        getPhotosAdapter()?.updateDisplayFilenames(config.displayFileNames)
+    }
+
+    private fun startPhotosSlideshow() {
+        if (mPhotos.isEmpty()) {
+            return
+        }
+
+        hideKeyboard()
+        Intent(this, ViewPagerActivity::class.java).apply {
+            val path = mPhotos.firstOrNull { it is Medium }?.let { (it as Medium).path } ?: return
+            putExtra(SKIP_AUTHENTICATION, true)
+            putExtra(PATH, path)
+            putExtra(SHOW_ALL, true)
+            putExtra(SLIDESHOW_START_ON_ENTER, true)
+            startActivity(this)
+        }
+    }
+
+    private fun getPhotos() {
+        if (mIsGettingPhotos) {
+            return
+        }
+
+        mIsGettingPhotos = true
+        if (mPhotosLoadedInitial) {
+            startPhotosAsyncTask()
+        } else {
+            getCachedMedia("") {
+                if (it.isEmpty()) {
+                    runOnUiThread {
+                        binding.photosRefreshLayout.isRefreshing = true
+                    }
+                } else {
+                    gotPhotos(it, true)
+                }
+
+                startPhotosAsyncTask()
+            }
+        }
+
+        mPhotosLoadedInitial = true
+    }
+
+    private fun startPhotosAsyncTask() {
+        mCurrPhotosAsyncTask?.stopFetching()
+        mCurrPhotosAsyncTask = GetMediaAsynctask(
+            context = applicationContext,
+            mPath = "",
+            showAll = true
+        ) {
+            ensureBackgroundThread {
+                val oldMedia = mPhotos.clone() as ArrayList<ThumbnailItem>
+                val newMedia = it
+                try {
+                    gotPhotos(newMedia, false)
+
+                    // remove cached files that are no longer valid for whatever reason
+                    val newPaths = newMedia.mapNotNull { item -> item as? Medium }.map { it.path }
+                    oldMedia
+                        .mapNotNull { item -> item as? Medium }
+                        .filter { !newPaths.contains(it.path) }
+                        .forEach { mediaDB.deleteMediumPath(it.path) }
+                } catch (ignored: Exception) {
+                }
+            }
+        }
+
+        mCurrPhotosAsyncTask!!.execute()
+    }
+
+    private fun gotPhotos(media: ArrayList<ThumbnailItem>, isFromCache: Boolean) {
+        mIsGettingPhotos = false
+        checkPhotosLastMediaChanged()
+        mPhotos = media
+
+        runOnUiThread {
+            binding.photosLoadingIndicator.hide()
+            binding.photosRefreshLayout.isRefreshing = false
+            binding.photosEmptyTextPlaceholder.beVisibleIf(media.isEmpty() && !isFromCache)
+            binding.photosEmptyTextPlaceholder2.beVisibleIf(media.isEmpty() && !isFromCache)
+
+            if (binding.photosEmptyTextPlaceholder.isVisible()) {
+                binding.photosEmptyTextPlaceholder.text = getString(R.string.no_media_with_filters)
+            }
+
+            binding.photosFastscroller.beVisibleIf(binding.photosEmptyTextPlaceholder.isGone())
+            setupPhotosAdapter()
+        }
+
+        mPhotosLatestMediaId = getLatestMediaId()
+        mPhotosLatestMediaDateId = getLatestMediaByDateId()
+
+        if (!isFromCache) {
+            val mediaToInsert = mPhotos
+                .filter { it is Medium && it.deletedTS == 0L }
+                .map { it as Medium }
+            Thread {
+                try {
+                    mediaDB.insertAll(mediaToInsert)
+                } catch (ignored: Exception) {
+                }
+            }.start()
+        }
+    }
+
+    private fun getPhotosAdapter() = binding.photosGrid.adapter as? MediaAdapter
+
+    private fun setupPhotosAdapter() {
+        val currAdapter = binding.photosGrid.adapter
+        if (currAdapter == null) {
+            initPhotosZoomListener()
+            MediaAdapter(
+                activity = this,
+                media = mPhotos.clone() as ArrayList<ThumbnailItem>,
+                listener = this,
+                isAGetIntent = false,
+                allowMultiplePicks = false,
+                path = SHOW_ALL,
+                recyclerView = binding.photosGrid
+            ) {
+                if (it is Medium && !isFinishing) {
+                    photosItemClicked(it.path)
+                }
+            }.apply {
+                setupZoomListener(mPhotosZoomListener)
+                binding.photosGrid.adapter = this
+            }
+
+            if (config.getFolderViewType(SHOW_ALL) == VIEW_TYPE_LIST && areSystemAnimationsEnabled) {
+                binding.photosGrid.scheduleLayoutAnimation()
+            }
+
+            setupPhotosLayoutManager()
+            handlePhotosGridSpacing()
+        } else if (mPhotosLastSearchedText.isEmpty()) {
+            (currAdapter as MediaAdapter).updateMedia(mPhotos)
+            handlePhotosGridSpacing()
+        } else {
+            searchPhotos(mPhotosLastSearchedText)
+        }
+
+        setupPhotosScrollDirection()
+    }
+
+    private fun setupPhotosScrollDirection() {
+        val scrollHorizontally =
+            config.scrollHorizontally && config.getFolderViewType(SHOW_ALL) == VIEW_TYPE_GRID
+        binding.photosFastscroller.setScrollVertically(!scrollHorizontally)
+    }
+
+    private fun setupPhotosLayoutManager() {
+        if (config.getFolderViewType(SHOW_ALL) == VIEW_TYPE_GRID) {
+            setupPhotosGridLayoutManager()
+        } else {
+            setupPhotosListLayoutManager()
+        }
+    }
+
+    private fun setupPhotosGridLayoutManager() {
+        val layoutManager = binding.photosGrid.layoutManager as MyGridLayoutManager
+        if (config.scrollHorizontally) {
+            layoutManager.orientation = RecyclerView.HORIZONTAL
+            binding.photosRefreshLayout.layoutParams = RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        } else {
+            layoutManager.orientation = RecyclerView.VERTICAL
+            binding.photosRefreshLayout.layoutParams = RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        layoutManager.spanCount = config.mediaColumnCnt
+        val adapter = getPhotosAdapter()
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return if (adapter?.isASectionTitle(position) == true) {
+                    layoutManager.spanCount
+                } else {
+                    1
+                }
+            }
+        }
+    }
+
+    private fun setupPhotosListLayoutManager() {
+        val layoutManager = binding.photosGrid.layoutManager as MyGridLayoutManager
+        layoutManager.spanCount = 1
+        layoutManager.orientation = RecyclerView.VERTICAL
+        binding.photosRefreshLayout.layoutParams = RelativeLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        mPhotosZoomListener = null
+    }
+
+    private fun handlePhotosGridSpacing(media: ArrayList<ThumbnailItem> = mPhotos) {
+        if (config.getFolderViewType(SHOW_ALL) != VIEW_TYPE_GRID) {
+            return
+        }
+
+        val spanCount = config.mediaColumnCnt
+        val spacing = config.thumbnailSpacing
+        val useGridPosition = media.firstOrNull() is ThumbnailSection
+
+        var currentGridDecoration: GridSpacingItemDecoration? = null
+        if (binding.photosGrid.itemDecorationCount > 0) {
+            currentGridDecoration =
+                binding.photosGrid.getItemDecorationAt(0) as GridSpacingItemDecoration
+            currentGridDecoration.items = media
+        }
+
+        val newGridDecoration = GridSpacingItemDecoration(
+            spanCount = spanCount,
+            spacing = spacing,
+            isScrollingHorizontally = config.scrollHorizontally,
+            addSideSpacing = config.fileRoundedCorners,
+            items = media,
+            useGridPosition = useGridPosition
+        )
+
+        if (currentGridDecoration.toString() != newGridDecoration.toString()) {
+            if (currentGridDecoration != null) {
+                binding.photosGrid.removeItemDecoration(currentGridDecoration)
+            }
+
+            binding.photosGrid.addItemDecoration(newGridDecoration)
+        }
+    }
+
+    private fun initPhotosZoomListener() {
+        if (config.getFolderViewType(SHOW_ALL) == VIEW_TYPE_GRID) {
+            val layoutManager = binding.photosGrid.layoutManager as MyGridLayoutManager
+            mPhotosZoomListener = object : MyRecyclerView.MyZoomListener {
+                override fun zoomIn() {
+                    if (layoutManager.spanCount > 1) {
+                        reducePhotosColumnCount()
+                        getPhotosAdapter()?.finishActMode()
+                    }
+                }
+
+                override fun zoomOut() {
+                    if (layoutManager.spanCount < MAX_COLUMN_COUNT) {
+                        increasePhotosColumnCount()
+                        getPhotosAdapter()?.finishActMode()
+                    }
+                }
+            }
+        } else {
+            mPhotosZoomListener = null
+        }
+    }
+
+    private fun changePhotosColumnCount() {
+        val items = ArrayList<RadioItem>()
+        for (i in 1..MAX_COLUMN_COUNT) {
+            items.add(
+                RadioItem(
+                    id = i,
+                    title = resources.getQuantityString(
+                        org.fossify.commons.R.plurals.column_counts, i, i
+                    )
+                )
+            )
+        }
+
+        val currentColumnCount = (binding.photosGrid.layoutManager as MyGridLayoutManager).spanCount
+        RadioGroupDialog(this, items, currentColumnCount) {
+            val newColumnCount = it as Int
+            if (currentColumnCount != newColumnCount) {
+                config.mediaColumnCnt = newColumnCount
+                photosColumnCountChanged()
+            }
+        }
+    }
+
+    private fun increasePhotosColumnCount() {
+        config.mediaColumnCnt += 1
+        photosColumnCountChanged()
+    }
+
+    private fun reducePhotosColumnCount() {
+        config.mediaColumnCnt -= 1
+        photosColumnCountChanged()
+    }
+
+    private fun photosColumnCountChanged() {
+        (binding.photosGrid.layoutManager as MyGridLayoutManager).spanCount = config.mediaColumnCnt
+        handlePhotosGridSpacing()
+        refreshPhotosMenuItems()
+        getPhotosAdapter()?.apply {
+            notifyItemRangeChanged(0, media.size)
+        }
+    }
+
+    private fun searchPhotos(text: String) {
+        ensureBackgroundThread {
+            try {
+                val filtered = mPhotos
+                    .filter { it is Medium && it.name.contains(text, true) } as ArrayList
+                filtered.sortBy { it is Medium && !it.name.startsWith(text, true) }
+                val grouped = MediaFetcher(applicationContext).groupMedia(
+                    media = filtered as ArrayList<Medium>, path = SHOW_ALL
+                )
+                runOnUiThread {
+                    if (grouped.isEmpty()) {
+                        binding.photosEmptyTextPlaceholder.text =
+                            getString(org.fossify.commons.R.string.no_items_found)
+                        binding.photosEmptyTextPlaceholder.beVisible()
+                        binding.photosFastscroller.beGone()
+                    } else {
+                        binding.photosEmptyTextPlaceholder.beGone()
+                        binding.photosFastscroller.beVisible()
+                    }
+
+                    handlePhotosGridSpacing(grouped)
+                    getPhotosAdapter()?.updateMedia(grouped)
+                }
+            } catch (ignored: Exception) {
+            }
+        }
+    }
+
+    private fun photosItemClicked(path: String) {
+        hideKeyboard()
+        mPhotosWereVisibleInFullscreen = true
+
+        if (!path.isVideoFast()) {
+            openPhotosInViewPager(path)
+            return
+        }
+
+        when (config.videoPlayerType) {
+            VIDEO_PLAYER_SYSTEM -> openPath(path = path, forceChooser = false)
+            VIDEO_PLAYER_APP -> if (config.gestureVideoPlayer) {
+                launchGesturePlayer(path)
+            } else {
+                openPhotosInViewPager(path)
+            }
+
+            else -> openPhotosInViewPager(path) // unreachable by design
+        }
+    }
+
+    private fun openPhotosInViewPager(path: String) {
+        Intent(this, ViewPagerActivity::class.java).apply {
+            putExtra(SKIP_AUTHENTICATION, true)
+            putExtra(PATH, path)
+            putExtra(SHOW_ALL, true)
+            putExtra(IS_FROM_GALLERY, true)
+            startActivity(this)
+        }
+    }
+
+    private fun checkPhotosLastMediaChanged() {
+        if (isDestroyed || config.getFolderSorting(SHOW_ALL) and SORT_BY_RANDOM != 0) {
+            return
+        }
+
+        mPhotosLastMediaHandler.removeCallbacksAndMessages(null)
+        mPhotosLastMediaHandler.postDelayed({
+            ensureBackgroundThread {
+                val mediaId = getLatestMediaId()
+                val mediaDateId = getLatestMediaByDateId()
+                if (mPhotosLatestMediaId != mediaId || mPhotosLatestMediaDateId != mediaDateId) {
+                    mPhotosLatestMediaId = mediaId
+                    mPhotosLatestMediaDateId = mediaDateId
+                    runOnUiThread {
+                        getPhotos()
+                    }
+                } else {
+                    checkPhotosLastMediaChanged()
+                }
+            }
+        }, LAST_MEDIA_CHECK_PERIOD)
     }
 
     private fun startNewPhotoFetcher() {
@@ -604,15 +1303,28 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
             }
 
             if (!mWasDefaultFolderChecked) {
-                openDefaultFolder()
+                // do not jump into the default folder while the photos are being displayed
+                if (!mShowingPhotos) {
+                    openDefaultFolder()
+                }
+
                 mWasDefaultFolderChecked = true
             }
 
             checkOTGPath()
             checkDefaultSpamFolders()
 
-            if (config.showAll) {
-                showAllMedia()
+            if (mShowingPhotos) {
+                if (mShowPhotosLoadingIndicator) {
+                    binding.photosLoadingIndicator.show()
+                    mShowPhotosLoadingIndicator = false
+                }
+
+                val isRandomSorting = config.getFolderSorting(SHOW_ALL) and SORT_BY_RANDOM != 0
+                if (mPhotos.isEmpty() || !isRandomSorting || !mPhotosWereVisibleInFullscreen) {
+                    mPhotosWereVisibleInFullscreen = false
+                    getPhotos()
+                }
             } else {
                 getDirectories()
             }
@@ -711,10 +1423,17 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
 
     private fun toggleTemporarilyShowHidden(show: Boolean) {
         mLoadedInitialPhotos = false
+        mPhotosLoadedInitial = false
         config.temporarilyShowHidden = show
         binding.directoriesGrid.adapter = null
-        getDirectories()
-        refreshMenuItems()
+        binding.photosGrid.adapter = null
+        refreshActiveMenu()
+
+        if (mShowingPhotos) {
+            getPhotos()
+        } else {
+            getDirectories()
+        }
     }
 
     private fun tryToggleTemporarilyShowExcluded() {
@@ -729,10 +1448,17 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
 
     private fun toggleTemporarilyShowExcluded(show: Boolean) {
         mLoadedInitialPhotos = false
+        mPhotosLoadedInitial = false
         config.temporarilyShowExcluded = show
         binding.directoriesGrid.adapter = null
-        getDirectories()
-        refreshMenuItems()
+        binding.photosGrid.adapter = null
+        refreshActiveMenu()
+
+        if (mShowingPhotos) {
+            getPhotos()
+        } else {
+            getDirectories()
+        }
     }
 
     override fun deleteFolders(folders: ArrayList<File>) {
@@ -1726,7 +2452,88 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener {
     }
 
     override fun refreshItems() {
-        getDirectories()
+        if (mShowingPhotos) {
+            getPhotos()
+        } else {
+            getDirectories()
+        }
+    }
+
+    override fun tryDeleteFiles(fileDirItems: ArrayList<FileDirItem>, skipRecycleBin: Boolean) {
+        val filtered = fileDirItems
+            .filter { !getIsPathDirectory(it.path) && it.path.isMediaFile() } as ArrayList
+        if (filtered.isEmpty()) {
+            return
+        }
+
+        if (
+            config.useRecycleBin
+            && !skipRecycleBin
+            && !filtered.first().path.startsWith(recycleBinPath)
+        ) {
+            val movingItems = resources.getQuantityString(
+                org.fossify.commons.R.plurals.moving_items_into_bin,
+                filtered.size,
+                filtered.size
+            )
+            toast(movingItems)
+
+            movePathsInRecycleBin(filtered.map { it.path } as ArrayList<String>) {
+                if (it) {
+                    deleteFilteredFiles(filtered)
+                } else {
+                    toast(org.fossify.commons.R.string.unknown_error_occurred)
+                }
+            }
+        } else {
+            val deletingItems = resources.getQuantityString(
+                org.fossify.commons.R.plurals.deleting_items,
+                filtered.size,
+                filtered.size
+            )
+            toast(deletingItems)
+            deleteFilteredFiles(filtered)
+        }
+    }
+
+    private fun deleteFilteredFiles(filtered: ArrayList<FileDirItem>) {
+        deleteFiles(filtered) {
+            if (!it) {
+                toast(org.fossify.commons.R.string.unknown_error_occurred)
+                return@deleteFiles
+            }
+
+            mPhotos.removeAll { item -> filtered.map { it.path }.contains((item as? Medium)?.path) }
+
+            ensureBackgroundThread {
+                val useRecycleBin = config.useRecycleBin
+                filtered.forEach {
+                    if (it.path.startsWith(recycleBinPath) || !useRecycleBin) {
+                        deleteDBPath(it.path)
+                    }
+                }
+            }
+        }
+    }
+
+    // picking multiple items from the photos is handled by MediaActivity
+    override fun selectedPaths(paths: ArrayList<String>) = Unit
+
+    override fun updateMediaGridDecoration(media: ArrayList<ThumbnailItem>) {
+        var currentGridPosition = 0
+        media.forEach {
+            if (it is Medium) {
+                it.gridPosition = currentGridPosition++
+            } else if (it is ThumbnailSection) {
+                currentGridPosition = 0
+            }
+        }
+
+        if (binding.photosGrid.itemDecorationCount > 0) {
+            val currentGridDecoration =
+                binding.photosGrid.getItemDecorationAt(0) as GridSpacingItemDecoration
+            currentGridDecoration.items = media
+        }
     }
 
     override fun recheckPinnedFolders() {

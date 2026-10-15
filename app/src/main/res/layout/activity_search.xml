@@ -8,7 +8,8 @@
     <org.fossify.commons.views.MySearchMenu
         android:id="@+id/search_menu"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        app:applyWindowInsets="false" />
 
     <RelativeLayout
         android:id="@+id/search_holder"

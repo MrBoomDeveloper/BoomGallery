@@ -20,7 +20,8 @@
             <org.fossify.commons.views.MySearchMenu
                 android:id="@+id/main_menu"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                app:applyWindowInsets="false" />
 
             <RelativeLayout
                 android:id="@+id/directories_holder"
@@ -100,7 +101,8 @@
             <org.fossify.commons.views.MySearchMenu
                 android:id="@+id/photos_menu"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                app:applyWindowInsets="false" />
 
             <com.google.android.material.progressindicator.CircularProgressIndicator
                 android:id="@+id/photos_loading_indicator"

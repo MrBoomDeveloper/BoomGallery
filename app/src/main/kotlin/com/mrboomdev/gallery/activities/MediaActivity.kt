@@ -82,6 +82,7 @@ import com.mrboomdev.gallery.extensions.movePathsInRecycleBin
 import com.mrboomdev.gallery.extensions.openPath
 import com.mrboomdev.gallery.extensions.openRecycleBin
 import com.mrboomdev.gallery.extensions.restoreRecycleBinPaths
+import com.mrboomdev.gallery.extensions.setCollapsibleOnScroll
 import com.mrboomdev.gallery.extensions.showRecycleBinEmptyingDialog
 import com.mrboomdev.gallery.extensions.showRestoreConfirmationDialog
 import com.mrboomdev.gallery.extensions.tryDeleteFileDirItem
@@ -175,10 +176,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
         setupOptionsMenu()
         refreshMenuItems()
         storeStateVariables()
-        setupEdgeToEdge(
-            padTopSystem = listOf(binding.mediaMenu),
-            padBottomImeAndSystem = listOf(binding.mediaGrid)
-        )
+        setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.mediaGrid))
 
         if (mShowAll) {
             registerFileUpdateListener()
@@ -361,7 +359,7 @@ class MediaActivity : SimpleActivity(), MediaOperationsListener {
 
     private fun setupOptionsMenu() {
         binding.mediaMenu.requireToolbar().inflateMenu(R.menu.menu_media)
-        binding.mediaMenu.toggleHideOnScroll(!config.scrollHorizontally)
+        binding.mediaMenu.setCollapsibleOnScroll(!config.scrollHorizontally)
         binding.mediaMenu.setupMenu()
 
         binding.mediaMenu.onSearchTextChangedListener = { text ->

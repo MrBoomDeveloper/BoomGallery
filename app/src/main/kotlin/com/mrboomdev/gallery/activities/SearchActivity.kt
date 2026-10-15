@@ -41,10 +41,7 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         setupOptionsMenu()
-        setupEdgeToEdge(
-            padTopSystem = listOf(binding.searchMenu),
-            padBottomImeAndSystem = listOf(binding.searchGrid)
-        )
+        setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.searchGrid))
         binding.searchEmptyTextPlaceholder.setTextColor(getProperTextColor())
         getAllMedia()
         binding.searchFastscroller.updateColors(getProperPrimaryColor())
@@ -62,7 +59,7 @@ class SearchActivity : SimpleActivity(), MediaOperationsListener {
 
     private fun setupOptionsMenu() {
         binding.searchMenu.requireToolbar().inflateMenu(R.menu.menu_search)
-        binding.searchMenu.toggleHideOnScroll(true)
+        binding.searchMenu.setCollapsibleOnScroll(true)
         binding.searchMenu.setupMenu()
         binding.searchMenu.toggleForceArrowBackIcon(true)
         binding.searchMenu.focusView()

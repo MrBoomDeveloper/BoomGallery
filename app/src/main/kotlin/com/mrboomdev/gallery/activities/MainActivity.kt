@@ -2,6 +2,7 @@ package com.mrboomdev.gallery.activities
 
 import android.content.ClipData
 import android.content.Intent
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -11,6 +12,8 @@ import android.provider.MediaStore.Video
 import android.view.ViewGroup
 import android.widget.RelativeLayout
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat.Type
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.fossify.commons.dialogs.CreateNewFolderDialog
@@ -119,6 +122,7 @@ import com.mrboomdev.gallery.extensions.movePinnedDirectoriesToFront
 import com.mrboomdev.gallery.extensions.openPath
 import com.mrboomdev.gallery.extensions.openRecycleBin
 import com.mrboomdev.gallery.extensions.removeInvalidDBDirectories
+import com.mrboomdev.gallery.extensions.setCollapsibleOnScroll
 import com.mrboomdev.gallery.extensions.storeDirectoryItems
 import com.mrboomdev.gallery.extensions.tryDeleteFileDirItem
 import com.mrboomdev.gallery.extensions.updateDBDirectory
@@ -175,6 +179,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener, MediaOperati
         private const val PICK_MEDIA = 2
         private const val PICK_WALLPAPER = 3
         private const val LAST_MEDIA_CHECK_PERIOD = 3000L
+        private const val IME_VISIBILITY_THRESHOLD = 0.15f
     }
 
     private var mIsPickImageIntent = false
@@ -279,8 +284,11 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener, MediaOperati
         refreshMenuItems()
         refreshPhotosMenuItems()
 
-        // the bottom navigation takes care of the bottom system insets and the window is resized by the keyboard
+        // the top inset is applied to the app bars themselves, so that the app bar can scroll away
+        // completely while the content stays visible behind the transparent status bar. The bottom
+        // navigation takes care of the bottom system insets and hides itself while the keyboard is shown
         setupEdgeToEdge()
+        setupBottomNavigationImeHandling()
 
         binding.directoriesRefreshLayout.setOnRefreshListener { getDirectories() }
         binding.photosRefreshLayout.setOnRefreshListener { getPhotos() }
@@ -329,6 +337,25 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener, MediaOperati
         handleMediaPermissions()
     }
 
+    private fun setupBottomNavigationImeHandling() {
+        if (isRPlus()) {
+            ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavigation) { _, insets ->
+                binding.bottomNavigation.beVisibleIf(!insets.isVisible(Type.ime()))
+                insets
+            }
+        } else {
+            // IME insets are not dispatched below Android 11, detect the keyboard by the visible display frame
+            val displayHeight = resources.displayMetrics.heightPixels
+            val decorView = window.decorView
+            decorView.viewTreeObserver.addOnGlobalLayoutListener {
+                val visibleFrame = Rect()
+                decorView.getWindowVisibleDisplayFrame(visibleFrame)
+                val imeHeight = displayHeight - visibleFrame.bottom
+                binding.bottomNavigation.beVisibleIf(imeHeight < displayHeight * IME_VISIBILITY_THRESHOLD)
+            }
+        }
+    }
+
     private fun handleMediaPermissions(callback: (() -> Unit)? = null) {
         requestMediaPermissions(enableRationale = true) {
             callback?.invoke()
@@ -369,6 +396,8 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener, MediaOperati
         if (mStoredScrollHorizontally != config.scrollHorizontally) {
             mLoadedInitialPhotos = false
             binding.directoriesGrid.adapter = null
+            binding.mainMenu.setCollapsibleOnScroll(!config.scrollHorizontally)
+            binding.photosMenu.setCollapsibleOnScroll(!config.scrollHorizontally)
             getDirectories()
         }
 
@@ -558,7 +587,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener, MediaOperati
         }
 
         binding.mainMenu.requireToolbar().inflateMenu(menuId)
-        binding.mainMenu.toggleHideOnScroll(!config.scrollHorizontally)
+        binding.mainMenu.setCollapsibleOnScroll(!config.scrollHorizontally)
         binding.mainMenu.setupMenu()
 
         binding.mainMenu.onSearchOpenListener = {
@@ -740,7 +769,7 @@ class MainActivity : SimpleActivity(), DirectoryOperationsListener, MediaOperati
 
     private fun setupPhotosOptionsMenu() {
         binding.photosMenu.requireToolbar().inflateMenu(R.menu.menu_media)
-        binding.photosMenu.toggleHideOnScroll(!config.scrollHorizontally)
+        binding.photosMenu.setCollapsibleOnScroll(!config.scrollHorizontally)
         binding.photosMenu.setupMenu()
         binding.photosMenu.updateHintText(getString(org.fossify.commons.R.string.search_files))
 
